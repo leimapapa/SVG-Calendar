@@ -213,6 +213,7 @@ const svgCalendar = (el) => {
 		MONTHS[month].charAt(0).toUpperCase() + MONTHS[month].slice(1)
 	}`;
 	monthDisplay.classList.add("month");
+	monthDisplay.classList.add(MONTHS[month]);
 	let monthTextAttrs = {
 		x: "50%",
 		y: 10,
