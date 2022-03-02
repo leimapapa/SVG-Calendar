@@ -1,60 +1,35 @@
-// output an SVG calendar into whichever element we pass in
-const svgCalendar = (el) => {
+//this one SVG calendar function is all you need.
+//************************
+const svgCal = (
+	el = document.querySelector("#svgCalendar"), 
+	today = new Date()) => {
 	if (!el) {
 		console.error('Tell us where to put the calendar!');
 		return;
 	}
-	const DAYS = [
-		"sunday",
-		"monday",
-		"tuesday",
-		"wednesday",
-		"thursday",
-		"friday",
-		"saturday"
-	];
-	const MONTHS = [
-		"january",
-		"february",
-		"march",
-		"april",
-		"may",
-		"june",
-		"july",
-		"august",
-		"september",
-		"october",
-		"november",
-		"december"
-	];
+	const DAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+	const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+	
+	const month = today.getMonth();
+	const dayOfMonth = today.getDate();
+	const year = today.getFullYear();
+	const firstDayOfMonth = new Date(year, month, 1).getDay();
+	const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-	let today = new Date();
-	let month = today.getMonth();
-	let dayOfMonth = today.getDate();
-	let year = today.getFullYear();
-	let firstDayOfMonth = new Date(
-		today.getFullYear(),
-		today.getMonth(),
-		1
-	).getDay();
-	let daysInMonth = new Date(
-		today.getFullYear(),
-		today.getMonth() + 1,
-		0
-	).getDate();
+	//capitalized month name
+	const displayMonth = MONTHS[month].charAt(0).toUpperCase() + MONTHS[month].slice(1);
+	
+	//create array of weekdays in order
+	let datesArray = [];
+	for (let i = 0; i < daysInMonth; i++) {
+		datesArray.push((i + firstDayOfMonth) % 7);
+	}
 
-	let weekIndex = [0, 1, 2, 3, 4, 5, 6];
-	let daysToColorFirst = weekIndex.filter((x) => {
-		return x >= firstDayOfMonth;
-	});
+	let displayDates = datesArray;
 
-	let numOfDays = daysInMonth - daysToColorFirst.length;
-
-	let dayFill = "rgba(0,0,0,0.3)";
-	let dayStroke = "rgba(255,255,255,0.1)";
-
-	//create svg container
+	//create svg
 	const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+	// svg.id = 'svg';
 	svg.setAttributeNS(
 		"http://www.w3.org/2000/xmlns/",
 		"xmlns:xlink",
@@ -62,65 +37,71 @@ const svgCalendar = (el) => {
 	);
 	svg.setAttribute("viewBox", "0 0 140 140");
 
-	//month container
-	let rectBG = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-	rectBG.classList.add("monthContainer");
-	//is rect today?
-	let rectBGAttrs = {
-		x: 0,
-		y: 20,
-		height: 120,
-		width: 140,
-		fill: "none",
-		stroke: "none",
-		"stroke-width": 1
-	};
-	for (let key in rectBGAttrs) {
-		rectBG.setAttribute(key, rectBGAttrs[key]);
+	//split weekdays into sub-arrays at 6
+	let daysByWeek = [];
+	for (var i = 0; i < datesArray.length; i++) {
+		if (datesArray[i] == 6) {
+			daysByWeek.push(datesArray.slice(0, i + 1));
+			datesArray = datesArray.slice(i + 1);
+			i = -1;
+		}
 	}
-	svg.appendChild(rectBG);
+	daysByWeek.push(datesArray);
+	
+	let dayOfMonthDisplay = 1;
+	
+	//loop through the weeks
+	for (let week = 0; week < daysByWeek.length; week++) {
+		const days = daysByWeek[week];
+		//loop through the days in each week
+		for (let day = 0; day < days.length; day++) {
+			let dayFill = "rgba(255,255,255,0.2)";
+			let dayStroke = "rgba(255,255,255,0.2)";
+			//day box
+			const dayBox = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+			dayBox.classList.add("day");
+			
+			//set a referencable dateTime
+			const dateTime = new Date(year, month, dayOfMonthDisplay);
+			dayBox.setAttribute('data-datetime', dateTime);
+			dayBox.classList.add(DAYS[dateTime.getDay()]);
+			
+			let dayStroke2;
+			//is rect passed in today?
+				if (new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()).getTime() == dateTime.getTime()) {
+					dayStroke2 = "rgba(255,255,255,1)";
+					dayBox.classList.add('today');
+				} else {
+					dayStroke2 = dayStroke;
+				}
 
-	//loop through the days
-	for (let i = 0; i < weekIndex.length; i++) {
-		if (daysToColorFirst.includes(i)) {
-			const dayOfMonthDisplay = i + daysToColorFirst.length - 6;
-
-			let rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-			rect.classList.add("day");
-			rect.classList.add(DAYS[i]);
-			//is rect today?
-			if (i - 1 == dayOfMonth) {
-				dayFill = "rgba(255,255,255,0.2)";
-				rect.classList.add("today");
-			} else {
-				dayFill = "rgba(0,0,0,0.3)";
-			}
-			let rectAttrs = {
-				x: i * 20,
-				y: 20,
+			const dayBoxAttrs = {
+				x: days[day] * 20,
+				y: (week + 1) * 20,
 				height: 20,
 				width: 20,
 				fill: dayFill,
-				stroke: dayStroke,
+				stroke: dayStroke2,
 				"stroke-width": 1
 			};
-			for (let key in rectAttrs) {
-				rect.setAttribute(key, rectAttrs[key]);
+			for (let key in dayBoxAttrs) {
+				dayBox.setAttribute(key, dayBoxAttrs[key]);
 			}
+
+			//capitalized weekday
+			const displayWeekday = DAYS[days[day]].charAt(0).toUpperCase() + DAYS[days[day]].slice(1);
+			
 			//title of each rect
-			let title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-			title.textContent = `${
-				DAYS[i].charAt(0).toUpperCase() + DAYS[i].slice(1)
-			}, ${
-				MONTHS[month].charAt(0).toUpperCase() + MONTHS[month].slice(1)
-			} ${dayOfMonthDisplay}, ${year}`;
-			rect.appendChild(title);
+			const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+			title.textContent = `${displayWeekday}, ${displayMonth} ${dayOfMonthDisplay}, ${year}`;
+			dayBox.appendChild(title);
+			
 			//text of each rect
-			let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+			const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
 			text.textContent = dayOfMonthDisplay;
-			let textAttrs = {
-				x: i * 20 + 10,
-				y: 30,
+			const textAttrs = {
+				x: (days[day] * 20) + 10,
+				y: ((week + 1) * 20) + 10,
 				"dominant-baseline": "middle",
 				fill: "#fff",
 				"font-family": "monospace",
@@ -132,86 +113,19 @@ const svgCalendar = (el) => {
 			for (let key in textAttrs) {
 				text.setAttribute(key, textAttrs[key]);
 			}
-			svg.appendChild(rect);
+			
+			//append it all
+			svg.appendChild(dayBox);
 			svg.appendChild(text);
+			
+			//increment display date
+			dayOfMonthDisplay++;
 		}
 	}
-
-	for (let i = 0; i < numOfDays; i++) {
-		let yPos;
-		if (i <= 6) {
-			yPos = 40;
-		} else if (i > 6 && i <= 13) {
-			yPos = 60;
-		} else if (i > 13 && i <= 20) {
-			yPos = 80;
-		} else if (i > 20 && i <= 27) {
-			yPos = 100;
-		} else if (i > 27 && i <= 34) {
-			yPos = 120;
-		}
-
-		//rect for each day
-		let rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-		rect.classList.add("day");
-		rect.classList.add(DAYS[i % 7]);
-		//is rect today?
-		const dayOfMonthDisplay = i + daysInMonth - (numOfDays - 1);
-		if (dayOfMonthDisplay == dayOfMonth) {
-			dayFill = "rgba(255,255,255,0.2)";
-			rect.classList.add("today");
-		} else {
-			dayFill = "rgba(0,0,0,0.3)";
-		}
-
-		let rectAttrs = {
-			x: (i % 7) * 20,
-			y: yPos,
-			height: 20,
-			width: 20,
-			fill: dayFill,
-			stroke: dayStroke,
-			"stroke-width": 1
-		};
-		for (let key in rectAttrs) {
-			rect.setAttribute(key, rectAttrs[key]);
-		}
-		//title of each day rect
-		let title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-		title.textContent = `${
-			DAYS[i % 7].charAt(0).toUpperCase() + DAYS[i % 7].slice(1)
-		}, ${
-			MONTHS[month].charAt(0).toUpperCase() + MONTHS[month].slice(1)
-		} ${dayOfMonthDisplay}, ${year}`;
-		rect.appendChild(title);
-		//text of each day rect
-		let text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-		text.textContent = dayOfMonthDisplay;
-		let textAttrs = {
-			x: (i % 7) * 20 + 10,
-			y: yPos + 10,
-			"dominant-baseline": "middle",
-			fill: "#fff",
-			"font-family": "monospace",
-			"font-size": 5,
-			"text-anchor": "middle",
-			"pointer-events": "none",
-			"user-select": "none"
-		};
-		for (let key in textAttrs) {
-			text.setAttribute(key, textAttrs[key]);
-		}
-		svg.appendChild(rect);
-		svg.appendChild(text);
-	}
+	
 	//month
-	const monthDisplay = document.createElementNS(
-		"http://www.w3.org/2000/svg",
-		"text"
-	);
-	monthDisplay.textContent = `${
-		MONTHS[month].charAt(0).toUpperCase() + MONTHS[month].slice(1)
-	}`;
+	const monthDisplay = document.createElementNS("http://www.w3.org/2000/svg",	"text");
+	monthDisplay.textContent = `${displayMonth}`;
 	monthDisplay.classList.add("month");
 	monthDisplay.classList.add(MONTHS[month]);
 	let monthTextAttrs = {
@@ -231,10 +145,7 @@ const svgCalendar = (el) => {
 	svg.appendChild(monthDisplay);
 
 	//year
-	const yearDisplay = document.createElementNS(
-		"http://www.w3.org/2000/svg",
-		"text"
-	);
+	const yearDisplay = document.createElementNS("http://www.w3.org/2000/svg","text");
 	yearDisplay.textContent = year;
 	yearDisplay.classList.add("year");
 	let yearTextAttrs = {
@@ -251,6 +162,8 @@ const svgCalendar = (el) => {
 	for (let key in yearTextAttrs) {
 		yearDisplay.setAttribute(key, yearTextAttrs[key]);
 	}
+	
 	svg.appendChild(yearDisplay);
 	el.appendChild(svg);
 };
+//************************
