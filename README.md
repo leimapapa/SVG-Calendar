@@ -17,5 +17,9 @@ Use it by pointing it to your element:
 svgCal(document.querySelector('#myElement'));
 ```
 
+## CDN
+https://cdn.jsdelivr.net/gh/leimapapa/SVG-Calendar/svgcalendar.min.js
+
+
 ## Working Example
 [codepen example](https://codepen.io/leimapapa/pen/MWOZEKj?editors=0010)
